@@ -1,0 +1,5 @@
+Google-Search-API==1.1.14
+apscheduler
+wikipedia
+flask
+line-bot-sdk

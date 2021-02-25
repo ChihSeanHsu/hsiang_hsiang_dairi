@@ -3,8 +3,9 @@ from __future__ import unicode_literals
 import asyncio
 import configparser
 from datetime import datetime, timedelta
-from google import google
+from googleapi import google
 import multiprocessing
+import json
 import os
 import pytz
 import random
@@ -17,13 +18,20 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, VideoMessage, VideoSendMessage, ImageSendMessage
 
+def parse_datetime_str_to_datetime_obj(date_string):
+    after_split = date_string.split('.')
+    datetime_obj = tz.localize(dt=datetime(*[int(i) for i in after_split]))
+    print(datetime_obj)
+    return datetime_obj
 
 app = Flask(__name__)
 
 wikipedia.set_lang("zh-tw")
 
 config = configparser.ConfigParser()
-config.read('/root/hsiang/config.ini')
+config.read('./config.ini')
+with open('config.json', 'r') as op:
+    app_config = json.load(op)
 
 line_bot_api = LineBotApi(config.get('line-bot', 'channel_access_token'))
 handler = WebhookHandler(config.get('line-bot', 'channel_secret'))
@@ -38,9 +46,9 @@ what = "什麼是"
 why = "為什麼"
 how_to = text = f'你可以問我一些問題喔，但我只看得懂一點東西。問問題的方式是這樣\n1.{who_am_i}{why}XXXX\n2.{who_am_i}{what}XXX\n然後還有一些隱藏功能就不講惹。'
 tz = pytz.timezone('Asia/Taipei')
-time_without_signal = tz.localize(dt=datetime(2020, 10, 1, 7, 0, 0))
-time_not_go_home = tz.localize(dt=datetime(2020, 9, 30, 18, 0, 0))
-time_to_start_climbing = tz.localize(dt=datetime(2020, 10, 1, 7, 0, 0))
+time_without_signal = parse_datetime_str_to_datetime_obj(app_config['with_out_signal'])
+time_not_go_home =parse_datetime_str_to_datetime_obj(app_config['not_go_home'])
+time_to_start_climbing = parse_datetime_str_to_datetime_obj(app_config['start_climbing'])
 
 
 error_usage = 0
@@ -134,19 +142,9 @@ def greeting(value):
         print('not yet')
 
 def duffy_iterator():
-    video = [
-        # share dropbox link and use modify query string from dl=0 to raw=1 to directly get video
-        'https://www.dropbox.com/s/x2ck2v9lhpmib27/duffy_1_re.mp4?raw=1',
-        'https://www.dropbox.com/s/3ez319eg8gikvux/duffy2.mp4?raw=1',
-        'https://www.dropbox.com/s/xksiyb933mtpp3a/duffy3.mp4?raw=1',
-        'https://www.dropbox.com/s/xhg0zs9ixbp6acu/duffy1.mp4?raw=1',
-    ]
-    thumbnail = [
-        'https://i.imgur.com/lkkiEub.jpg',
-        'https://i.imgur.com/liyGLUx.jpg',
-        'https://i.imgur.com/01Q5eDf.jpg',
-        'https://i.imgur.com/UAVAIsZ.jpg',
-    ]
+    # share dropbox link and use modify query string from dl=0 to raw=1 to directly get video
+    video = app_config['video']['video']
+    thumbnail = app_config['video']['thumbnail']
     while True:
         for i in range(len(video)):
             yield (video[i], thumbnail[i])
@@ -168,19 +166,7 @@ def post_duffy():
         print('not yet')
 
 def selfie_iterator():
-    selfies = [
-        'https://i.imgur.com/MwWeYly.jpg',
-        'https://i.imgur.com/hIXXADA.jpg',
-        'https://i.imgur.com/KmJML7r.jpg',
-        'https://i.imgur.com/msRzIqc.jpg',
-        'https://i.imgur.com/WZdUYcn.jpg',
-        'https://i.imgur.com/sihDN0b.jpg',
-        'https://i.imgur.com/xpjS5lX.jpg',
-        'https://i.imgur.com/DAetlc4.jpg',
-        'https://i.imgur.com/jpBRPMp.jpg',
-        'https://i.imgur.com/rvkioDj.jpg',
-        'https://i.imgur.com/zHyk9il.jpg', 
-    ]
+    selfies =  app_config['selfie']
     while True:
         for i in range(len(selfies)):
             yield selfies[i]
@@ -270,9 +256,9 @@ if __name__ == "__main__":
 
     scheduler.print_jobs()
     import logging
-    logging.basicConfig(filename='/root/debug.log',level=logging.INFO)
+    logging.basicConfig(filename='./debug.log',level=logging.INFO)
     reborn(hsiang)
-    reborn(who)
+    # reborn(who)
     try:
         app.run(port=80)
 

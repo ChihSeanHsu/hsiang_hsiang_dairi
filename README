@@ -1,0 +1,3 @@
+yum groupinstall "Development Tools"
+yum install python3-devel
+pip install git+https://github.com/abenassi/Google-Search-API
